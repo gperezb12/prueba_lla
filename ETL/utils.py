@@ -1,4 +1,4 @@
-from pyspark.sql.functions import col, lit, count, abs, first, round, sum, collect_list, floor,struct, sqrt, pow, array, expr,current_date
+from pyspark.sql.functions import col, lit, count, abs, first, round, sum, collect_list, floor,struct, sqrt, pow, array, expr,current_date,size
 from pyspark.sql.types import StringType, IntegerType, DoubleType
 from pyspark.sql import DataFrame
 
@@ -71,3 +71,19 @@ def calculate_distances(grid_df: DataFrame) -> DataFrame:
 
     return distance_df.withColumn("date_processed", current_date()) #Agregar fecha para mantener track semanal
 
+
+def add_event_counts(df: DataFrame) -> DataFrame:
+    """
+    Dado un DataFrame que contiene la columna 'event' (un collect_list de 1s y 2s),
+    crea dos columnas nuevas con el conteo de 1s y 2s y elimina la columna 'event'.
+    """
+    df_new = (
+        df
+        # Cuenta el número de 1s en la lista
+        .withColumn("number_of_type1_events", size(expr("filter(event, x -> x == 1)")))
+        # Cuenta el número de 2s en la lista
+        .withColumn("number_of_type2_events", size(expr("filter(event, x -> x == 2)")))
+        # Elimina la columna original event
+        .drop("event")
+    )
+    return df_new

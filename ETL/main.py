@@ -1,6 +1,6 @@
 from pyspark.sql import SparkSession
 import os
-from utils import asignar_grids, calculate_distances
+from utils import asignar_grids, calculate_distances, add_event_counts
 os.environ["JAVA_HOME"] = 'C:\\Program Files\\Java\\jdk-17'  #para correr pyspark local necesitamos tener java
 
 spark = SparkSession.builder\
@@ -31,24 +31,25 @@ grid_df = asignar_grids(cleaned_df) #Asignarle una grilla a caad punto, para pod
 
 dist_df = calculate_distances(grid_df) #Encuentra la distancia slo entre los puntos en las grillas adyacentes
 
+final_df = add_event_counts(dist_df)
 
-#Guardar las tablas para los diferentes actores
-#Para los cientificos de datos
-dist_df_ds = dist_df.withColumn("event", expr("concat_ws(',', event)")) #Cambiaer evento a un tipo de dato compatible con perequet
 
 # Guardar el primer DataFrame en S3 como perequet
 
 # Crear un nuevo DataFrame con solo las columnas requeridas para los analistas
-dist_simplified_df = dist_df.select(
+dist_simplified_df = final_df.select(
     col("ID_geo"),
     col("comuna"),
     col("ID_event"),
-    expr("concat_ws(',', event)").alias("event"),  # Transformar `event` en esta línea sin sobrescribir la variable
     col("distance"),
-    col("date_processed")
+    col("date_processed"),
+    col("number_of_type1_events"),
+    col("number_of_type2_events")
 )
 
 # Guardar el segundo DataFrame como perequet en S3
 
-dist_df.show(10)
+
+
+final_df.show(10)
 
